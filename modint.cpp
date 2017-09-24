@@ -43,3 +43,18 @@ mint operator^(mint a, unsigned long long k) {
 	}
 	return r;
 }
+
+vector<mint> fact, factinv;
+void nCr_computeFactinv(int N) {
+	N = min(N, mint::Mod - 1);
+	fact.resize(N + 1); factinv.resize(N + 1);
+	fact[0] = 1;
+	rer(i, 1, N) fact[i] = fact[i - 1] * i;
+	factinv[N] = fact[N].inverse();
+	for (int i = N; i >= 1; i --) factinv[i - 1] = factinv[i] * i;
+}
+mint nCr(int n, int r) {
+	if (n >= mint::Mod)
+		return nCr(n % mint::Mod, r % mint::Mod) * nCr(n / mint::Mod, r / mint::Mod);
+	return r > n ? 0 : fact[n] * factinv[n - r] * factinv[r];
+}
