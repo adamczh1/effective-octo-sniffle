@@ -61,7 +61,7 @@ void tree_eulertour(const vector<vector<int> > &g, int root) {
 		int i = stk.back(); stk.pop_back();
 		if (i < 0) {
 			i = -i - 1;
-			t_right[i] = t_ord.size() + 1;
+			t_right[i] = t_ord.size();
 			continue;
 		}
 		t_left[i] = t_ord.size() + 1;
