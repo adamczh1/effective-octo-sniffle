@@ -56,14 +56,15 @@ void tree_eulertour(const vector<vector<int> > &g, int root) {
 	t_right.assign(n, -1);
 
 	vector<int> stk; stk.push_back(root);
+	t_left[root] = 1;
 	while (!stk.empty()) {
 		int i = stk.back(); stk.pop_back();
 		if (i < 0) {
 			i = -i - 1;
-			t_right[i] = t_ord.size();
+			t_right[i] = t_ord.size() + 1;
 			continue;
 		}
-		t_left[i] = t_ord.size();
+		t_left[i] = t_ord.size() + 1;
 		t_ord.push_back(i);
 		stk.push_back(-(i + 1));
 		for (int j = (int)g[i].size() - 1; j >= 0; j --) {
