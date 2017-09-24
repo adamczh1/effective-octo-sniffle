@@ -44,14 +44,34 @@ void wtree_getorder(const vector<vector<pair<int, T> > > &gw, int root, vector<T
 	}
 }
 
-// euler tour order
-int t_TIME = 0;
-int t_start[MAXN], t_end[MAXN];
-void dfs(int cur, int p = -1) {
-	t_start[cur] = ++t_TIME;
-	for (int v : adj[cur]) {
-        if (v == p) continue;
-        dfs(v, cur);
+vector<int> t_parent;
+vector<int> t_ord;
+vector<int> t_left, t_right;
+
+void tree_eulertour(const vector<vector<int> > &g, int root) {
+	int n = g.size();
+	t_parent.assign(n, -1);
+	t_ord.clear();
+	t_left.assign(n, -1);
+	t_right.assign(n, -1);
+
+	vector<int> stk; stk.push_back(root);
+	while (!stk.empty()) {
+		int i = stk.back(); stk.pop_back();
+		if (i < 0) {
+			i = -i - 1;
+			t_right[i] = t_ord.size();
+			continue;
+		}
+		t_left[i] = t_ord.size();
+		t_ord.push_back(i);
+		stk.push_back(-(i + 1));
+		for (int j = (int)g[i].size() - 1; j >= 0; j --) {
+			int c = g[i][j];
+			if (t_parent[c] == -1 && c != root) {
+				t_parent[c] = i;
+				stk.push_back(c);
+			}
+		}
 	}
-	t_end[cur] = t_TIME;
 }
