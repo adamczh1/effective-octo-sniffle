@@ -22,7 +22,6 @@ struct segtree {
         if(l>r||r<a||b<l)return;
         if(a<=l&&r<=b){
             lazy[x]+=v;
-            lazy[x]%=mod;
             prop(x,l,r);
             return;
         }
@@ -39,8 +38,7 @@ struct segtree {
         }
         prop(x,l,r);
         int mid=(l+r)/2;
-        ll res=query(2*x,l,mid,a,b);
-        res+=query(2*x+1,mid+1,r,a,b);
+        ll res=query(2*x,l,mid,a,b)+query(2*x+1,mid+1,r,a,b);
         return res;
     }
     void update(int a,int b,ll v){
