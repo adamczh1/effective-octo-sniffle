@@ -1,7 +1,7 @@
 template <typename T>
 class flow_graph {
-    public:
-        static constexpr T eps = (T) 1e-9;
+public:
+    static constexpr T eps = (T) 1e-9;
 
     struct edge {
         int from;
