@@ -1,35 +1,103 @@
-const ll is_query = -(1LL<<62);
-struct Line {
-    ll m, b;
-    mutable function<const Line*()> succ;
-    bool operator<(const Line& rhs) const {
-        if (rhs.b != is_query) return m < rhs.m;
-        const Line* s = succ();
-        if (!s) return 0;
-        ll x = rhs.m;
-        return b - s->b < (s->m - m) * x;
+class hull_optimizer {
+  struct line {
+    long long m, b, value;
+    double xlo;
+    bool is_query, query_max;
+
+    line(long long m, long long b, long long v, bool is_query, bool query_max)
+        : m(m), b(b), value(v), xlo(-std::numeric_limits<double>::max()),
+          is_query(is_query), query_max(query_max) {}
+
+    double intersect(const line &l) const {
+      if (m == l.m) {
+        return std::numeric_limits<double>::max();
+      }
+      return (double)(l.b - b)/(m - l.m);
     }
-};
-struct HullDynamic : public multiset<Line> { // will maintain upper hull for maximum
-    bool bad(iterator y) {
-        auto z = next(y);
-        if (y == begin()) {
-            if (z == end()) return 0;
-            return y->m == z->m && y->b <= z->b;
-        }
-        auto x = prev(y);
-        if (z == end()) return y->m == x->m && y->b <= x->b;
-        return (x->b - y->b)*(z->m - y->m) >= (y->b - z->b)*(y->m - x->m);
+
+    bool operator<(const line &l) const {
+      if (l.is_query) {
+        return query_max ? (xlo < l.value) : (l.value < xlo);
+      }
+      return m < l.m;
     }
-    void insert_line(ll m, ll b) {
-        auto y = insert({ m, b });
-        y->succ = [=] { return next(y) == end() ? 0 : &*next(y); };
-        if (bad(y)) { erase(y); return; }
-        while (next(y) != end() && bad(next(y))) erase(next(y));
-        while (y != begin() && bad(prev(y))) erase(prev(y));
+  };
+
+  std::set<line> hull;
+  bool query_max;
+
+  typedef std::set<line>::iterator hulliter;
+
+  bool has_prev(hulliter it) const {
+    return it != hull.begin();
+  }
+
+  bool has_next(hulliter it) const {
+    return (it != hull.end()) && (++it != hull.end());
+  }
+
+  bool irrelevant(hulliter it) const {
+    if (!has_prev(it) || !has_next(it)) {
+      return false;
     }
-    ll eval(ll x) {
-        auto l = *lower_bound((Line) { x, is_query });
-        return l.m * x + l.b;
+    hulliter prev = it, next = it;
+    --prev;
+    ++next;
+    return query_max ? (prev->intersect(*next) <= prev->intersect(*it))
+                     : (next->intersect(*prev) <= next->intersect(*it));
+  }
+
+  hulliter update_left_border(hulliter it) {
+    if ((query_max && !has_prev(it)) || (!query_max && !has_next(it))) {
+      return it;
     }
+    hulliter it2 = it;
+    double value = it->intersect(query_max ? *--it2 : *++it2);
+    line l(*it);
+    l.xlo = value;
+    hull.erase(it++);
+    return hull.insert(it, l);
+  }
+
+ public:
+  hull_optimizer(bool query_max = false) : query_max(query_max) {}
+
+  void add_line(long long m, long long b) {
+    line l(m, b, 0, false, query_max);
+    hulliter it = hull.lower_bound(l);
+    if (it != hull.end() && it->m == l.m) {
+      if ((query_max && it->b < b) || (!query_max && b < it->b)) {
+        hull.erase(it++);
+      } else {
+        return;
+      }
+    }
+    it = hull.insert(it, l);
+    if (irrelevant(it)) {
+      hull.erase(it);
+      return;
+    }
+    while (has_prev(it) && irrelevant(--it)) {
+      hull.erase(it++);
+    }
+    while (has_next(it) && irrelevant(++it)) {
+      hull.erase(it--);
+    }
+    it = update_left_border(it);
+    if (has_prev(it)) {
+      update_left_border(--it);
+    }
+    if (has_next(++it)) {
+      update_left_border(++it);
+    }
+  }
+
+  long long query(long long x) const {
+    line q(0, 0, x, true, query_max);
+    hulliter it = hull.lower_bound(q);
+    if (query_max) {
+      --it;
+    }
+    return it->m*x + it->b;
+  }
 };
