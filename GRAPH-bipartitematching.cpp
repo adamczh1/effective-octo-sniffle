@@ -1,3 +1,25 @@
+bool dfs(int cur){
+	if(vis[cur]) return 0;
+	vis[cur]=1;
+	for(int v:g[cur]){
+		if(match[v]==-1 || dfs(match[v])){
+			match[cur]=v;
+			match[v]=cur;
+			return 1;
+		}
+	}
+	return 0;
+}
+int bimatch(){
+	memset(match,-1,sizeof match);
+	int res=0;
+	for(int i=1;i<=n;i++)if(match[i]==-1){
+		memset(vis,0,sizeof vis);
+		if(dfs(i))res++;;
+	}
+	return res;
+}
+
 struct bipartitematch{
     vector<int> G[MAXN];
     int n, m, match[MAXN], dist[MAXN];
