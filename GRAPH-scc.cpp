@@ -7,7 +7,7 @@ void strongconnect(const vector<vi> &g,int cur,int &t){
 			strongconnect(g,v,t);
 			low[cur]=min(low[cur],low[v]);
 		}
-		else if(onstk[v]){ // could also be else doesn't matter
+		else if(onstk[v]){ // important
 			low[cur]=min(low[cur],num[v]);
 		}
 	}
