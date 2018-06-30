@@ -1,3 +1,5 @@
+// better implementation in the making
+
 #include <bits/stdc++.h>
 using namespace std;
 
