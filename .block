@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<script src="//d3js.org/d3.v4.min.js"></script>
+
+<script>
+ROUND_1_URL = 'https://raw.githubusercontent.com/adamczh1/effective-octo-sniffle/master/castle-solutions.csv';
+
+var initial_deployment = [10,10,10,10,10,10,10,10,10,10];
+
+var width = 960;
+var height = 500;
+
+var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("font-family", "Arial");
+
+var bars = svg.append("g").selectAll("rect")
+	.data(initial_deployment)
+	.enter()
+	.append("rect")
+	.attr("x", function(d, i) {
+		return i * (width / initial_deployment.length);
+	})
+	.attr("y", height - 1)
+	.attr("width", width / initial_deployment.length - 5)
+	.attr("height", d=>d);
+
+var text = svg.append("g").selectAll("barText")
+	.data(initial_deployment)
+	.enter()
+	.append("text")
+	.attr("text-anchor", "middle")
+   	.attr("x", (d, i) => (i + .5) * (width / initial_deployment.length))
+   	.attr("y", height - 1);
+
+var best_bars = svg.append("g").selectAll("rect")
+   .data(initial_deployment)
+   .enter()
+   .append("rect")
+   .attr("fill", "blue")
+   .attr("x", (d, i) => i * (width / initial_deployment.length))
+   .attr("y", height-1)
+   .attr("width", width / initial_deployment.length - 5)
+   .attr("height", 3);
+
+var best_winning_percentage = svg.append("text")
+	.attr("text-anchor", "left")
+	.attr("x", 20)
+	.attr("y", 20)
+	.text("Best Combined Winning Percentage: 0")
+
+var current_winning_percentage = svg.append("text")
+	.attr("text-anchor", "left")
+	.attr("x", 20)
+	.attr("y", 40)
+	.text("Current Combined Winning Percentage: 0")
+
+var best_deployment = svg.append("text")
+	.attr("text-anchor", "left")
+	.attr("x", 20)
+	.attr("y", 60)
+	.text("Best Deployment: " + initial_deployment)
+
+
+function anneal(play, games, gl2, best, saved_best, saved_play) {
+	var old_play = play.slice()
+	var attempt = swap(play)
+	var new_score = (score(attempt, games) + score(attempt, gl2)) / 2.
+	if (Math.random() < .1 || new_score > best) {
+		best = new_score
+		play = attempt
+		if (best > saved_best) {
+			saved_best = best
+			saved_play = play
+		}
+		gl2.push(attempt)
+	}
+
+	var n = 0
+
+	best_winning_percentage.text("Best Combined Winning Percentage: " + saved_best.toFixed(4))
+	current_winning_percentage.text("Current Combined Winning Percentage: " + new_score.toFixed(4))
+	best_deployment.text("Best Deployment: " + saved_play)
+
+	best_bars.transition()
+		.duration(90)
+  		.attr("y", (d, i) => height - (saved_play[i] * 4));
+
+	text.attr("y", (d, i) => height - (play[i] * 4) - 10)
+		.text((d, i) => play[i]);
+
+	bars.transition()
+  		.duration(90)
+  		.attr("fill", function(d, i) {
+			if (old_play[i] == attempt[i]) {
+				return "rgb(68, 68, 68)"
+			}
+			if (old_play[i] > attempt[i]) {
+				return "rgb(204, 59, 59)"
+			}
+			if (old_play[i] < attempt[i]) {
+				return "rgb(106, 173, 65)"
+			}
+		})
+  		.attr("y", (d, i) => height - (play[i] * 4))
+   		.attr("height", (d, i) => play[i] * 4)
+		.on("end", function() {
+			n++;
+			if (n == play.length) {
+				anneal(play, games, gl2, best, saved_best, saved_play)
+			}
+		}.bind(this))
+}
+
+
+
+function a_wins(a, b){
+	var a_pts = 0
+	var b_pts = 0
+	for (var i = 0; i < 10; i++) {
+		if (a[i] > b[i]) {
+			a_pts += i + 1
+		}
+		else if (b[i] > a[i]) {
+			b_pts += i + 1
+		}
+	}
+	if (a_pts > b_pts) {
+		return true
+	}
+	return false
+}
+
+function score(play, games) {
+	var did_win = games.map(game => a_wins(play, game))
+	wins = did_win.reduce(function(a, b) {return a + b})
+	return wins / did_win.length
+
+}
+
+function swap(play) {
+	var p = play.slice()
+	var take_indices_available = p.map((v, i) => v > 0 ? i : -1)
+			.filter(v => v >= 0)
+	take_index = take_indices_available[
+		Math.floor(Math.random() * take_indices_available.length)
+	]
+	give_index = Math.floor(Math.random() * p.length)
+	p[take_index] -= 1
+	p[give_index] += 1
+	return p
+}
+
+d3.csv(ROUND_1_URL, function(data) {
+	games = data.map(function(row) {
+		r = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
+		return r.map(castle => parseInt(row["Castle " + castle]))
+	})
+	anneal(initial_deployment, games, games.slice(), 0, 0, initial_deployment)
+})
+
+</script>
+</body>
